@@ -39,7 +39,8 @@ a {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -769,17 +770,33 @@ main {
   box-shadow: 0 8px 22px rgba(17, 55, 48, 0.06);
 }
 
-.message-list {
+.message-carousel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 16px;
 }
 
+.message-carousel-viewport {
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.message-carousel-track {
+  display: flex;
+  transition: transform 420ms ease;
+  will-change: transform;
+}
+
 .message-card {
-  padding: 16px;
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: 22px;
   background: #fbfdfc;
   box-shadow: 0 8px 20px rgba(17, 55, 48, 0.05);
+  border-color: rgba(8, 127, 111, 0.24);
+  background:
+    linear-gradient(135deg, rgba(8, 127, 111, 0.07), transparent 56%),
+    #fbfdfc;
 }
 
 .message-card-head {
@@ -833,7 +850,65 @@ main {
 .message-card p {
   margin: 0;
   color: #405853;
-  font-size: 15px;
+  font-size: clamp(16px, 2vw, 19px);
+  line-height: 1.8;
+}
+
+.message-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.message-preview-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.message-preview {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+  background: #ffffff;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.message-preview:hover,
+.message-preview.active {
+  border-color: rgba(8, 127, 111, 0.48);
+  background: var(--surface-soft);
+  transform: translateY(-1px);
+}
+
+.message-preview .message-avatar {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+}
+
+.message-preview .message-meta strong {
+  font-size: 14px;
+}
+
+.message-preview .message-meta span {
+  max-width: 100%;
+  min-height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .message-form {
@@ -970,8 +1045,8 @@ footer {
     grid-template-columns: 1fr;
   }
 
-  .message-list,
-  .message-fields {
+  .message-fields,
+  .message-preview-list {
     grid-template-columns: 1fr;
   }
 
