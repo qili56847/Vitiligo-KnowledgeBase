@@ -14,6 +14,13 @@ type QaItem = {
   tags: string[];
 };
 
+type PatientMessage = {
+  id: string;
+  name: string;
+  meta: string;
+  message: string;
+};
+
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "全部" },
   { id: "basics", label: "基础认知" },
@@ -155,6 +162,27 @@ const pathway = [
   ["Step 04", "定期复盘", "按周期评估疗效和副作用，不自行叠加偏方或长期滥用药物。"],
 ];
 
+const initialMessages: PatientMessage[] = [
+  {
+    id: "message-1",
+    name: "李女士",
+    meta: "就诊准备",
+    message: "第一次去皮肤科前，把白斑变化照片按日期整理好，医生沟通会清楚很多。",
+  },
+  {
+    id: "message-2",
+    name: "患者家属",
+    meta: "儿童护理",
+    message: "孩子治疗期间最需要的是稳定作息和减少同学误解，家长先把疾病解释清楚很重要。",
+  },
+  {
+    id: "message-3",
+    name: "匿名留言",
+    meta: "日常防晒",
+    message: "坚持防晒后，白斑和周围皮肤的色差没有夏天那么明显，心理压力也小一些。",
+  },
+];
+
 function normalizeText(value: string) {
   return value.toLowerCase().trim();
 }
@@ -188,6 +216,7 @@ function Header() {
         </div>
         <nav className="nav" aria-label="页面导航">
           <a href="#faq">常见问题</a>
+          <a href="#messages">患者留言</a>
           <a href="#pathway">就诊流程</a>
           <a href="#sources">参考来源</a>
         </nav>
@@ -563,6 +592,78 @@ function QaSection() {
   );
 }
 
+function PatientMessages() {
+  const [messages, setMessages] = useState<PatientMessage[]>(initialMessages);
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+
+  const submitMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) return;
+
+    setMessages((currentMessages) => [
+      {
+        id: `message-${Date.now()}`,
+        name: name.trim() || "匿名留言",
+        meta: "刚刚提交",
+        message: trimmedMessage,
+      },
+      ...currentMessages,
+    ]);
+    setName("");
+    setMessage("");
+  };
+
+  return (
+    <section id="messages" aria-labelledby="messages-title">
+      <div className="section-head">
+        <div>
+          <h2 id="messages-title">患者留言</h2>
+          <p>分享就诊准备、护理经验或想问医生的问题。请勿填写身份证号、电话、住址等隐私信息。</p>
+        </div>
+      </div>
+
+      <div className="messages-panel">
+        <div className="message-list" aria-label="患者留言列表">
+          {messages.map((item) => (
+            <article className="message-card" key={item.id}>
+              <div className="message-card-head">
+                <div className="message-avatar" aria-hidden="true">
+                  {item.name.slice(0, 1)}
+                </div>
+                <div className="message-meta">
+                  <strong>{item.name}</strong>
+                  <span>{item.meta}</span>
+                </div>
+              </div>
+              <p>{item.message}</p>
+            </article>
+          ))}
+        </div>
+
+        <form className="message-form" onSubmit={submitMessage}>
+          <h3>写一条留言</h3>
+          <div className="message-fields">
+            <label>
+              <span>昵称</span>
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="可留空，默认匿名" maxLength={16} />
+            </label>
+            <label className="message-textarea-field">
+              <span>留言内容</span>
+              <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="例如：就诊前我应该准备哪些照片和记录？" maxLength={160} rows={4} />
+            </label>
+          </div>
+          <div className="message-form-footer">
+            <small>{message.length}/160</small>
+            <button className="button button-primary" type="submit">提交留言</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}
+
 function PathwaySection() {
   return (
     <section id="pathway" aria-labelledby="pathway-title">
@@ -611,6 +712,7 @@ export default function Home() {
         </div>
         <KnowledgeCarousel />
         <QaSection />
+        <PatientMessages />
         <PathwaySection />
       </main>
       <Footer />
