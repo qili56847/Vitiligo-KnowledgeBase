@@ -684,6 +684,8 @@ function PatientMessages() {
     setCurrentMessage((index + messages.length) % messages.length);
   };
 
+  const activeMessage = messages[currentMessage] ?? messages[0];
+
   const submitMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedMessage = message.trim();
@@ -722,22 +724,18 @@ function PatientMessages() {
           onBlur={() => setIsPaused(false)}
         >
           <div className="message-carousel-viewport">
-            <div className="message-carousel-track" style={{ transform: `translateX(-${currentMessage * 100}%)` }}>
-              {messages.map((item, index) => (
-                <article className="message-card" aria-label={`第 ${index + 1} 条患者留言`} key={item.id}>
-                  <div className="message-card-head">
-                    <div className="message-avatar" aria-hidden="true">
-                      {item.name.slice(0, 1)}
-                    </div>
-                    <div className="message-meta">
-                      <strong>{item.name}</strong>
-                      <span>{item.meta}</span>
-                    </div>
-                  </div>
-                  <p>{item.message}</p>
-                </article>
-              ))}
-            </div>
+            <article className="message-card" aria-live="polite" aria-label={`第 ${currentMessage + 1} 条患者留言`} key={activeMessage.id}>
+              <div className="message-card-head">
+                <div className="message-avatar" aria-hidden="true">
+                  {activeMessage.name.slice(0, 1)}
+                </div>
+                <div className="message-meta">
+                  <strong>{activeMessage.name}</strong>
+                  <span>{activeMessage.meta}</span>
+                </div>
+              </div>
+              <p>{activeMessage.message}</p>
+            </article>
           </div>
 
           <div className="message-carousel-controls">

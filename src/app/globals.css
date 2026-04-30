@@ -781,15 +781,7 @@ main {
   border-radius: var(--radius);
 }
 
-.message-carousel-track {
-  display: flex;
-  transition: transform 420ms ease;
-  will-change: transform;
-}
-
 .message-card {
-  flex: 0 0 100%;
-  min-width: 0;
   padding: 22px;
   background: #fbfdfc;
   box-shadow: 0 8px 20px rgba(17, 55, 48, 0.05);
