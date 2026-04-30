@@ -712,8 +712,8 @@ export default function Home() {
         </div>
         <KnowledgeCarousel />
         <QaSection />
-        <PatientMessages />
         <PathwaySection />
+        <PatientMessages />
       </main>
       <Footer />
     </>
