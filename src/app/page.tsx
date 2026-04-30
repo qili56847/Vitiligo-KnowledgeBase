@@ -813,9 +813,11 @@ function PathwaySection() {
       <div className="pathway">
         {pathway.map(([step, title, desc]) => (
           <div className="step" key={step}>
-            <b>{step}</b>
-            <h3>{title}</h3>
-            <p>{desc}</p>
+            <div className="step-node" aria-hidden="true">{step}</div>
+            <div className="step-content">
+              <h3>{title}</h3>
+              <p>{desc}</p>
+            </div>
           </div>
         ))}
       </div>
