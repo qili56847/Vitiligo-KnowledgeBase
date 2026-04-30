@@ -417,21 +417,30 @@ const slides = [
 
 function KnowledgeCarousel() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (isPaused) return;
     const timer = window.setInterval(() => {
       setCurrentSlide((slide) => (slide + 1) % slides.length);
     }, 5200);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [currentSlide, isPaused]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide((index + slides.length) % slides.length);
   };
 
   return (
-    <section className="qa-carousel" aria-label="白癜风诊断、治疗和护理轮播图">
+    <section
+      className="qa-carousel"
+      aria-label="白癜风诊断、治疗和护理轮播图"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+    >
       <div className="carousel-viewport">
         <div className="carousel-track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
           {slides.map((slide) => (
