@@ -379,6 +379,40 @@ function CareSvg() {
   );
 }
 
+function MisconceptionSvg() {
+  return (
+    <svg viewBox="0 0 520 320" role="img" aria-label="白癜风患者常见误区">
+      <rect width="520" height="320" fill="#f5faf8" />
+      <rect x="24" y="22" width="472" height="276" rx="18" fill="#ffffff" stroke="#d9e3df" />
+      <text x="46" y="56" fill="#16302b" fontSize="22" fontWeight="800">患者常见误区</text>
+      <text x="46" y="82" fill="#64736f" fontSize="13">把传言和事实分开，减少无效焦虑与错误处理</text>
+
+      <rect x="48" y="112" width="128" height="126" rx="14" fill="#fff7ef" stroke="#f0d6bc" />
+      <circle cx="112" cy="150" r="28" fill="#ffd89a" opacity="0.9" />
+      <path d="M93 133l38 38M131 133l-38 38" stroke="#d9863d" strokeWidth="7" strokeLinecap="round" />
+      <text x="74" y="202" fill="#a35420" fontSize="15" fontWeight="800">会传染？</text>
+      <text x="66" y="224" fill="#405853" fontSize="12">接触不会传播</text>
+
+      <rect x="196" y="112" width="128" height="126" rx="14" fill="#eef6f3" stroke="#b8cbc5" />
+      <path d="M233 154c0-22 18-40 40-40s40 18 40 40-18 40-40 40-40-18-40-40Z" fill="#087f6f" opacity="0.14" />
+      <path d="M252 155l14 14 30-36" fill="none" stroke="#087f6f" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+      <text x="220" y="202" fill="#075f55" fontSize="15" fontWeight="800">只能忌口？</text>
+      <text x="214" y="224" fill="#405853" fontSize="12">均衡饮食更重要</text>
+
+      <rect x="344" y="112" width="128" height="126" rx="14" fill="#f8fbfa" stroke="#d9e3df" />
+      <path d="M388 134h40c10 0 18 8 18 18v18c0 10-8 18-18 18h-40c-10 0-18-8-18-18v-18c0-10 8-18 18-18Z" fill="#ffffff" stroke="#b8cbc5" strokeWidth="3" />
+      <path d="M383 162h50" stroke="#d9863d" strokeWidth="6" strokeLinecap="round" />
+      <path d="M408 137v50" stroke="#087f6f" strokeWidth="6" strokeLinecap="round" />
+      <text x="372" y="202" fill="#075f55" fontSize="15" fontWeight="800">偏方根治？</text>
+      <text x="364" y="224" fill="#405853" fontSize="12">先问诊再决定</text>
+
+      <rect x="70" y="262" width="380" height="16" rx="8" fill="#d9e3df" />
+      <rect x="70" y="262" width="284" height="16" rx="8" fill="#087f6f" />
+      <text x="70" y="292" fill="#64736f" fontSize="12">遇到快速扩大、疼痒或用药不适，应及时复诊</text>
+    </svg>
+  );
+}
+
 const slides = [
   {
     label: "诊断检查",
@@ -412,6 +446,17 @@ const slides = [
       "饮食以均衡为主，不盲目偏方；焦虑、回避社交或睡眠变差时应主动寻求支持。",
     ],
     visual: <CareSvg />,
+  },
+  {
+    label: "患者误区",
+    title: "别让传言打乱判断和治疗节奏",
+    desc: "白癜风相关信息很多，但“会传染”“必须极端忌口”“偏方能根治”等说法容易让患者错过规范评估。更稳妥的做法是把症状变化、用药反应和生活诱因记录下来，和医生一起复盘。",
+    points: [
+      "白癜风不通过接触传播，不需要因为共餐、握手或共同生活而隔离患者。",
+      "不建议盲目长期忌口或依赖偏方，饮食、补剂和外用产品最好结合个人情况确认。",
+      "看到白斑扩大、颜色变化或治疗后刺激反应时，及时复诊比自行频繁换方案更可靠。",
+    ],
+    visual: <MisconceptionSvg />,
   },
 ];
 
