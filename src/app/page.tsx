@@ -166,20 +166,38 @@ const initialMessages: PatientMessage[] = [
   {
     id: "message-1",
     name: "李女士",
-    meta: "就诊准备",
-    message: "第一次去皮肤科前，把白斑变化照片按日期整理好，医生沟通会清楚很多。",
+    meta: "就诊准备 · 复诊记录",
+    message: "第一次去皮肤科前，我把白斑出现的时间、最近有没有晒伤和每周照片都按日期整理好。医生能很快看出变化速度，也更容易判断是否需要伍德灯和进一步检查。",
   },
   {
     id: "message-2",
     name: "患者家属",
-    meta: "儿童护理",
-    message: "孩子治疗期间最需要的是稳定作息和减少同学误解，家长先把疾病解释清楚很重要。",
+    meta: "儿童护理 · 家校沟通",
+    message: "孩子治疗期间，除了按时涂药和复诊，我们发现稳定作息、减少抓挠和向老师说明情况都很重要。同学理解之后，孩子在学校里被反复追问的压力小了很多。",
   },
   {
     id: "message-3",
     name: "匿名留言",
-    meta: "日常防晒",
-    message: "坚持防晒后，白斑和周围皮肤的色差没有夏天那么明显，心理压力也小一些。",
+    meta: "日常防晒 · 夏季经验",
+    message: "坚持防晒后，白斑和周围皮肤的色差没有夏天那么明显。现在出门会提前涂广谱防晒，长时间户外再加遮阳帽和薄外套，心里也踏实一些。",
+  },
+  {
+    id: "message-4",
+    name: "周先生",
+    meta: "治疗复盘 · 光疗坚持",
+    message: "刚开始治疗时总想很快看到变化，后来医生提醒要按周期复盘。我把用药、光疗日期和皮肤反应记在手机里，复诊时能更准确地讨论效果和副作用。",
+  },
+  {
+    id: "message-5",
+    name: "匿名患者",
+    meta: "心理支持 · 社交压力",
+    message: "脸上白斑明显时，我一度不太想参加聚会。后来和医生讨论遮盖产品，也和家人说清自己的焦虑，慢慢能把注意力放回工作和生活本身。",
+  },
+  {
+    id: "message-6",
+    name: "王女士",
+    meta: "饮食生活 · 避免偏方",
+    message: "我以前听过很多忌口和偏方，越查越焦虑。现在主要做均衡饮食、规律睡眠和按医嘱治疗，不再随便叠加刺激性产品，皮肤状态反而更稳定。",
   },
 ];
 
@@ -648,8 +666,23 @@ function QaSection() {
 
 function PatientMessages() {
   const [messages, setMessages] = useState<PatientMessage[]>(initialMessages);
+  const [currentMessage, setCurrentMessage] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (isPaused || messages.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setCurrentMessage((index) => (index + 1) % messages.length);
+    }, 4800);
+    return () => window.clearInterval(timer);
+  }, [isPaused, messages.length]);
+
+  const goToMessage = (index: number) => {
+    setCurrentMessage((index + messages.length) % messages.length);
+  };
 
   const submitMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -665,6 +698,7 @@ function PatientMessages() {
       },
       ...currentMessages,
     ]);
+    setCurrentMessage(0);
     setName("");
     setMessage("");
   };
@@ -679,10 +713,62 @@ function PatientMessages() {
       </div>
 
       <div className="messages-panel">
-        <div className="message-list" aria-label="患者留言列表">
-          {messages.map((item) => (
-            <article className="message-card" key={item.id}>
-              <div className="message-card-head">
+        <div
+          className="message-carousel"
+          aria-label="患者留言轮播"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={() => setIsPaused(false)}
+        >
+          <div className="message-carousel-viewport">
+            <div className="message-carousel-track" style={{ transform: `translateX(-${currentMessage * 100}%)` }}>
+              {messages.map((item, index) => (
+                <article className="message-card" aria-label={`第 ${index + 1} 条患者留言`} key={item.id}>
+                  <div className="message-card-head">
+                    <div className="message-avatar" aria-hidden="true">
+                      {item.name.slice(0, 1)}
+                    </div>
+                    <div className="message-meta">
+                      <strong>{item.name}</strong>
+                      <span>{item.meta}</span>
+                    </div>
+                  </div>
+                  <p>{item.message}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="message-carousel-controls">
+            <button className="carousel-button" type="button" aria-label="上一条留言" onClick={() => goToMessage(currentMessage - 1)}>
+              ‹
+            </button>
+            <div className="carousel-dots" aria-label="留言分页">
+              {messages.map((item, index) => (
+                <button
+                  className={`carousel-dot${index === currentMessage ? " active" : ""}`}
+                  type="button"
+                  aria-label={`查看第 ${index + 1} 条留言`}
+                  aria-current={index === currentMessage ? "true" : "false"}
+                  onClick={() => goToMessage(index)}
+                  key={item.id}
+                />
+              ))}
+            </div>
+            <button className="carousel-button" type="button" aria-label="下一条留言" onClick={() => goToMessage(currentMessage + 1)}>
+              ›
+            </button>
+          </div>
+
+          <div className="message-preview-list" aria-label="留言预览">
+            {messages.map((item, index) => (
+              <button
+                className={`message-preview${index === currentMessage ? " active" : ""}`}
+                type="button"
+                onClick={() => goToMessage(index)}
+                key={item.id}
+              >
                 <div className="message-avatar" aria-hidden="true">
                   {item.name.slice(0, 1)}
                 </div>
@@ -690,10 +776,9 @@ function PatientMessages() {
                   <strong>{item.name}</strong>
                   <span>{item.meta}</span>
                 </div>
-              </div>
-              <p>{item.message}</p>
-            </article>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
 
         <form className="message-form" onSubmit={submitMessage}>
