@@ -21,6 +21,86 @@ type PatientMessage = {
   message: string;
 };
 
+type SupabasePatientMessage = {
+  id: string;
+  name: string | null;
+  message: string;
+  created_at: string;
+};
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+const formatMessageMeta = (createdAt: string) => {
+  const createdTime = new Date(createdAt).getTime();
+  if (Number.isNaN(createdTime)) return "来自留言表";
+
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
+  if (diffMinutes < 1) return "刚刚提交";
+  if (diffMinutes < 60) return `${diffMinutes} 分钟前`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} 小时前`;
+
+  return new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric" }).format(new Date(createdAt));
+};
+
+const mapSupabaseMessage = (item: SupabasePatientMessage): PatientMessage => ({
+  id: item.id,
+  name: item.name || "匿名留言",
+  meta: formatMessageMeta(item.created_at),
+  message: item.message,
+});
+
+const fetchPatientMessages = async () => {
+  if (!supabaseUrl || !supabaseAnonKey) return [];
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/patient_messages?select=id,name,message,created_at&order=created_at.desc&limit=12`,
+    {
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("无法读取留言");
+  }
+
+  const data = (await response.json()) as SupabasePatientMessage[];
+  return data.map(mapSupabaseMessage);
+};
+
+const createPatientMessage = async (name: string, message: string) => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("留言数据库尚未配置");
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/patient_messages?select=id,name,message,created_at`, {
+    method: "POST",
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${supabaseAnonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({
+      name: name || null,
+      message,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("留言提交失败，请稍后再试");
+  }
+
+  const [created] = (await response.json()) as SupabasePatientMessage[];
+  return mapSupabaseMessage(created);
+};
+
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "全部" },
   { id: "basics", label: "基础认知" },
@@ -156,10 +236,34 @@ const quickNotes = [
 ];
 
 const pathway = [
-  ["Step 01", "确认变化", "拍照记录位置、大小、颜色变化和诱因，避免只凭记忆描述。"],
-  ["Step 02", "皮肤科评估", "医生可能使用伍德灯，并根据情况安排血液检查或其他检查。"],
-  ["Step 03", "制定目标", "明确是控制进展、促进复色、减少色差，还是优先改善心理压力。"],
-  ["Step 04", "定期复盘", "按周期评估疗效和副作用，不自行叠加偏方或长期滥用药物。"],
+  {
+    step: "01",
+    phase: "发现后 1-2 周",
+    title: "先把变化记录清楚",
+    desc: "用固定光线和距离拍照，记录首次出现时间、面积变化、是否对称，以及晒伤、外伤、压力等诱因。",
+    action: "准备：照片、时间线、近期用药或护肤品清单",
+  },
+  {
+    step: "02",
+    phase: "首次就诊",
+    title: "确认是不是白癜风",
+    desc: "皮肤科医生会结合查体、伍德灯或皮肤镜判断，并排除花斑癣、炎症后色素减退、贫血痣等相似情况。",
+    action: "重点问：是否进展期、是否需要查甲状腺等伴随问题",
+  },
+  {
+    step: "03",
+    phase: "方案启动",
+    title: "把目标拆成可复盘计划",
+    desc: "治疗目标通常包括控制扩散、促进复色、减少色差和减轻心理压力。外用药、光疗或遮盖产品应按部位和阶段选择。",
+    action: "确认：用药频率、光疗周期、哪些反应需要停用或复诊",
+  },
+  {
+    step: "04",
+    phase: "每 4-12 周",
+    title: "按周期评估而不是频繁换方",
+    desc: "带着照片和记录复诊，比较扩散速度、复色变化和副作用。若效果有限，也应先复盘执行情况和适应证。",
+    action: "避免：自行叠加偏方、长期滥用激素或突然中断方案",
+  },
 ];
 
 const initialMessages: PatientMessage[] = [
@@ -670,6 +774,8 @@ function PatientMessages() {
   const [isPaused, setIsPaused] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formStatus, setFormStatus] = useState(isSupabaseConfigured ? "" : "留言数据库尚未配置，请先设置 Supabase 环境变量。");
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -680,29 +786,57 @@ function PatientMessages() {
     return () => window.clearInterval(timer);
   }, [isPaused, messages.length]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!isSupabaseConfigured) return;
+
+    fetchPatientMessages()
+      .then((storedMessages) => {
+        if (!isMounted || storedMessages.length === 0) return;
+        setMessages(storedMessages);
+        setCurrentMessage(0);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setFormStatus("暂时无法读取历史留言，新提交内容仍会尝试保存。");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const goToMessage = (index: number) => {
     setCurrentMessage((index + messages.length) % messages.length);
   };
 
   const activeMessage = messages[currentMessage] ?? messages[0];
 
-  const submitMessage = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitMessage = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    const trimmedName = name.trim();
     const trimmedMessage = message.trim();
     if (!trimmedMessage) return;
 
-    setMessages((currentMessages) => [
-      {
-        id: `message-${Date.now()}`,
-        name: name.trim() || "匿名留言",
-        meta: "刚刚提交",
-        message: trimmedMessage,
-      },
-      ...currentMessages,
-    ]);
-    setCurrentMessage(0);
-    setName("");
-    setMessage("");
+    setIsSubmitting(true);
+    setFormStatus("");
+
+    try {
+      const createdMessage = await createPatientMessage(trimmedName, trimmedMessage);
+      setMessages((currentMessages) => [createdMessage, ...currentMessages]);
+      setCurrentMessage(0);
+      setName("");
+      setMessage("");
+      setFormStatus("留言已保存。");
+    } catch (error) {
+      setFormStatus(error instanceof Error ? error.message : "留言提交失败，请稍后再试。");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -793,8 +927,11 @@ function PatientMessages() {
           </div>
           <div className="message-form-footer">
             <small>{message.length}/160</small>
-            <button className="button button-primary" type="submit">提交留言</button>
+            <button className="button button-primary" type="submit" disabled={isSubmitting || !isSupabaseConfigured}>
+              {isSubmitting ? "提交中..." : "提交留言"}
+            </button>
           </div>
+          {formStatus && <p className="message-form-status">{formStatus}</p>}
         </form>
       </div>
     </section>
@@ -807,19 +944,32 @@ function PathwaySection() {
       <div className="section-head">
         <div>
           <h2 id="pathway-title">从发现白斑到管理方案</h2>
-          <p>这不是诊疗处方，而是帮助你和医生沟通的思路。</p>
+          <p>把“先做什么、问什么、何时复盘”整理成一条路径，方便就诊前准备和复诊时沟通。</p>
         </div>
       </div>
-      <div className="pathway">
-        {pathway.map(([step, title, desc]) => (
-          <div className="step" key={step}>
-            <div className="step-node" aria-hidden="true">{step}</div>
-            <div className="step-content">
-              <h3>{title}</h3>
-              <p>{desc}</p>
-            </div>
-          </div>
-        ))}
+
+      <div className="pathway-panel">
+        <div className="pathway-intro">
+          <span className="pathway-label">管理路径</span>
+          <h3>先诊断，再分期；先设目标，再看疗效</h3>
+          <p>白斑变化快、儿童发病、毛发变白、眼部不适或治疗后刺激明显时，不建议继续观察等待，应尽快面诊。</p>
+        </div>
+
+        <div className="pathway">
+          {pathway.map((item) => (
+            <article className="step" key={item.step}>
+              <div className="step-top">
+                <div className="step-node" aria-hidden="true">{item.step}</div>
+                <span>{item.phase}</span>
+              </div>
+              <div className="step-content">
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+              </div>
+              <div className="step-action">{item.action}</div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
